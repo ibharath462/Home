@@ -9,6 +9,7 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.PixelFormat;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.SystemClock;
@@ -18,10 +19,13 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.ViewGroup;
+import android.view.WindowManager;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.widget.Button;
@@ -42,7 +46,8 @@ public class MainActivity extends AppCompatActivity {
     Animation move1,move2;
     CardView v0,v1,v2,v3;
     float h,w,x,y;
-    int bFLAG=0,boundFlag=0;
+    int state;
+    int bFLAG=0,boundFlag=0,actionFlag=0;
     BtReceiver btrec;
     RelativeLayout rel;
     final int[] i = {10};
@@ -50,6 +55,12 @@ public class MainActivity extends AppCompatActivity {
     int index=0,flag=0;
     Handler mHandler=null;
     String buffer;
+
+    private WindowManager wm;
+    private LinearLayout ll;
+    private Button yes,no;
+    TextView show;
+
     LinearLayout ll1;
     LST t1=null;
 
@@ -252,8 +263,15 @@ public class MainActivity extends AppCompatActivity {
                 buffer=buffer.trim();
                 t1.setText("Recognised..."+buffer);
                 Log.d("Index_delete:", "" + index);
-                rel.removeViewAt(index);
-                checkDraw(buffer);
+                if(actionFlag==0) {
+                    rel.removeViewAt(index);
+                    checkDraw(buffer);
+                }
+                else if(actionFlag==1){
+                    confirmActivity(buffer);
+                    t1.setText("Recognising...");
+                    buffer=null;
+                }
                 return;
             }
             else if(buffer.length()==2){
@@ -262,8 +280,10 @@ public class MainActivity extends AppCompatActivity {
             else{
                 buffer+=s;
                 buffer=buffer.trim();
-                rel.removeViewAt(index);
-                checkDraw(buffer);
+                if(actionFlag==0) {
+                    rel.removeViewAt(index);
+                    checkDraw(buffer);
+                }
                 String t=action.get(buffer);
                 Toast.makeText(getApplicationContext(),"Action baby:"+t, Toast.LENGTH_LONG).show();
                 t1.setText("Recognising...");
@@ -271,6 +291,60 @@ public class MainActivity extends AppCompatActivity {
             }
 
         }
+    }
+
+    public void confirm(String t){
+
+        wm=(WindowManager)getSystemService(WINDOW_SERVICE);
+        ll=new LinearLayout(this);
+        show=new TextView(this);
+        yes=new Button(this);
+        no=new Button(this);
+
+        //Text
+        ViewGroup.LayoutParams textp=new ViewGroup.LayoutParams(ViewGroup.LayoutParams.FILL_PARENT,ViewGroup.LayoutParams.WRAP_CONTENT);
+        show.setLayoutParams(textp);
+        show.setTextSize(32);
+        show.setTextColor(Color.BLUE);
+        show.setText("Confirm " + t + "?");
+
+        //Button Yes...
+        ViewGroup.LayoutParams pyes=new ViewGroup.LayoutParams(ViewGroup.LayoutParams.FILL_PARENT,ViewGroup.LayoutParams.WRAP_CONTENT);
+        yes.setText("Yes(1)");
+        yes.setLayoutParams(pyes);
+
+        //Button No...
+        ViewGroup.LayoutParams pno=new ViewGroup.LayoutParams(ViewGroup.LayoutParams.FILL_PARENT,ViewGroup.LayoutParams.WRAP_CONTENT);
+        no.setText("No(0)");
+        no.setLayoutParams(pno);
+
+        LinearLayout.LayoutParams llp=new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,LinearLayout.LayoutParams.MATCH_PARENT);
+        ll.setBackgroundColor(Color.argb(66, 255, 255, 0));
+        ll.setLayoutParams(llp);
+        WindowManager.LayoutParams p=new WindowManager.LayoutParams(1000,500, WindowManager.LayoutParams.TYPE_PHONE, WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE, PixelFormat.TRANSLUCENT);
+        p.x=0;
+        p.y=0;
+        p.gravity= Gravity.CENTER | Gravity.CENTER;
+        ll.setOrientation(LinearLayout.VERTICAL);
+        ll.addView(show);
+        ll.addView(yes);
+        ll.addView(no);
+        wm.addView(ll,p);
+
+    }
+
+    public void confirmActivity(String t){
+        int x=Integer.parseInt(t);
+        if(x==1){
+
+            Toast.makeText(getApplicationContext(),""+x+",,,State:"+state,Toast.LENGTH_SHORT).show();
+
+        }
+        else{
+            Toast.makeText(getApplicationContext(),"Poda venna..."+state,Toast.LENGTH_SHORT).show();
+        }
+        wm.removeView(ll);
+        actionFlag=0;
     }
 
     public void checkDraw(String xx){
@@ -309,6 +383,9 @@ public class MainActivity extends AppCompatActivity {
                     x=v0.getX();
                     y=v0.getY();
                     bound(x,y,w,h);
+                    actionFlag=1;
+                    state=yy;
+                    confirm("Call");
                     break;
                 case 01:
                     h= v1.getHeight();
@@ -316,6 +393,9 @@ public class MainActivity extends AppCompatActivity {
                     x=v1.getX();
                     y=v1.getY();
                     bound(x,y,w,h);
+                    actionFlag=1;
+                    state=yy;
+                    confirm("Message");
                     break;
                 case 10:
                     h= v2.getHeight();
@@ -323,6 +403,9 @@ public class MainActivity extends AppCompatActivity {
                     x=v2.getX();
                     y=v2.getY();
                     bound(x,y,w,h);
+                    actionFlag=1;
+                    state=yy;
+                    confirm("Camera");
                     break;
                 case 11:
                     h= v3.getHeight();
@@ -330,10 +413,15 @@ public class MainActivity extends AppCompatActivity {
                     x=v3.getX();
                     y=v3.getY();
                     bound(x,y,w,h);
+                    actionFlag=1;
+                    state=yy;
+                    confirm("Music");
                     break;
             }
 
         }
 
     }
+
 }
+
